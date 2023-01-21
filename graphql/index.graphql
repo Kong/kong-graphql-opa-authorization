@@ -1,0 +1,219 @@
+"the rate at a point in history."
+type Frankfurter_Historical_Rates {
+  "amount of money"
+  amount: Float
+  "base currency"
+  base: String
+  "date of rate in ISO 8601 format. For example \"2021-10-03\""
+  date: Date
+  "object with key of currency code and float value based upon amount"
+  rates: JSON
+}
+
+"the rate at the current point in time."
+type Frankfurter_Latest_Rates {
+  "amount of base current"
+  amount: Float
+  "base currency"
+  base: String
+  "date of rate in ISO 8601 format. For example \"2021-10-03\""
+  date: Date
+  "object with key of currency code and float value"
+  rates: JSON
+}
+
+"historical rates as a timeseries"
+type Frankfurter_TimeSeries_Rates {
+  "base amount"
+  amount: Float
+  "base currency"
+  base: String
+  "end_date in ISO 8601 format. For example \"2021-10-03\""
+  end_date: Date
+  "object with key of currency code and float value based upon amount"
+  rates: JSON
+  "start_date in ISO 8601 format. For example \"2021-10-03\""
+  start_date: Date
+}
+
+type IpApi_Location {
+  "AS number and organization, separated by space (RIR). Empty for IP blocks not being announced in BGP tables."
+  as: String
+  "City"
+  city: String
+  "Continent name"
+  continent: String
+  "Two-letter continent code"
+  continentCode: String
+  "Country name"
+  country: String
+  "Two-letter country code ISO 3166-1 alpha-2"
+  countryCode: String
+  "National currency"
+  currency: String
+  "District (subdivision of city)"
+  district: String
+  "Hosting, colocated or data center"
+  hosting: Boolean
+  "IP used for the query"
+  ip: String
+  "ISP name"
+  isp: String
+  "Latitude"
+  lat: Float
+  "Longitude"
+  lon: Float
+  """
+  included only when status is fail
+  Can be one of the following: private range, reserved range, invalid query
+  """
+  message: String
+  "Mobile (cellular) connection"
+  mobile: Boolean
+  "Timezone UTC DST offset in seconds"
+  offset: Int
+  "Organization name"
+  org: String
+  """
+  Enter the currency of the seller in the from argument,
+  Enter the amount of goods sold in sellers currency in the amount argument
+  And get the price in the country of the ip address
+  """
+  priceInCountry(amount: Float!, from: String!): Float
+  "Proxy, VPN or Tor exit address"
+  proxy: Boolean
+  "Region/state short code (FIPS or ISO)"
+  region: String
+  "Region/state"
+  regionName: String
+  "Reverse DNS of the IP (can delay response).  Not in default fields."
+  reserve: String
+  "success or fail"
+  status: String
+  "Timezone (tz)"
+  timezone: String
+  "Zip code"
+  zip: String
+}
+
+"StepZen_Request encapsulates many details of the call, here we are only interested in the ip address"
+type IpApi_StepZen_Request {
+  clientIp: String
+}
+
+"""
+Query root object type.
+
+Contains fields that are available at the top level of a GraphQL `query`.
+
+If an operation is a `query`, the result of the operation is the result of
+executing the query’s top level selection set with the `Query` root object type.
+"""
+type Query {
+  "Convert a single amount between two currencies at the latest rate."
+  frankfurter_convertedAmount(
+    "Amount to be converted."
+    amount: Float!
+    "base currency"
+    from: String!
+    "target currency"
+    to: String!
+  ): Float
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  "available currency symbols along with their full names."
+  frankfurter_currency_list: JSON
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  "returns rates for any working day since 4 January 1999"
+  frankfurter_historical_rates(
+    "to convert from base amount to to amount (default 1)"
+    amount: Float
+    "date in ISO8601 format, for example, \"2021-10-03\"."
+    date: Date
+    "base currency (default: EUR euro)"
+    from: String
+    """
+    With a full list of currencies, the response grows large in size. For
+    better performance, use the to parameter to limit result to rates you
+    are interested in.
+    """
+    to: String
+  ): Frankfurter_Historical_Rates
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  """
+  This endpoint returns the latest rates.
+
+  The Frankfurter API tracks foreign exchange references rates published
+  by the European Central Bank. The data refreshes around 16:00 CET
+  every working day.
+  """
+  frankfurter_latest_rates(
+    "to convert from base amount to to amount (default 1)"
+    amount: Float
+    """
+    use from to quote against other currencies.
+    Rates quote against the Euro by default.
+    """
+    from: String
+    "to limits returned rates to specified values."
+    to: String
+  ): Frankfurter_Latest_Rates
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  """
+  returns a set of historical rates for a given time period.
+  (since Jan 4 1999)
+  """
+  frankfurter_time_series(
+    "to convert from base amount to to amount (default 1)"
+    amount: Float
+    "end_date in ISO 8601 format. For example \"2021-10-03\""
+    end_date: Date
+    "base currency (default: EUR euro)"
+    from: String
+    "start_date in ISO 8601 format. For example \"2021-10-03\""
+    start_date: Date
+    """
+    With a full list of currencies, the response grows large in size. For
+    better performance, use the to parameter to limit result to rates you
+    are interested in.
+    """
+    to: String
+  ): Frankfurter_TimeSeries_Rates
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  """
+  IP Geolocation.
+  https://ip-api.com/docs/api:json
+  """
+  ipApi_location(
+    "query ip (or domain)"
+    ip: String!
+    "ISO 639 code"
+    lang: String! = "en"
+  ): IpApi_Location
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  """
+  Fetch Details for the caller in two steps (@sequence directive)
+  1. Fetch IP Address of the caller
+  2. Use that IP Address to fetch details from ip-api
+  """
+  ipApi_location_Auto(lang: String! = "en"): IpApi_Location
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+  "Fetch IP Address of the caller"
+  ipApi_stepzen_request: IpApi_StepZen_Request
+    @graphql(
+      endpoint: "https://graphqldd.stepzen.net/api/dd1cf47f51ac830fe21dc00ec80cee65/__graphql"
+    )
+}

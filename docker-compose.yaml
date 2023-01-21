@@ -1,0 +1,30 @@
+services:
+  opa:
+    image: openpolicyagent/opa:latest
+    command:
+      - "run"
+      - "--server"
+      - "--log-format=json-pretty"
+      - "--set=decision_logs.console=true"
+    networks: 
+      - kong-net
+    ports: 
+      - '8181:8181'
+  keycloak:
+    image: quay.io/keycloak/keycloak:20.0.2
+    command: start-dev
+    networks: 
+      - kong-net
+    environment:
+      - KEYCLOAK_HOSTNAME=keycloak
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+    ports: 
+      - '8080:8080'
+networks:
+  kong-net:
+    external: false
+    name: kong-net
+
+
+    
