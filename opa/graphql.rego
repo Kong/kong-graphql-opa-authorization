@@ -1,11 +1,52 @@
-package graphql
+package demopolicy.gql
 
 import future.keywords.every
 import future.keywords.in
 
+schema := `
+type Frankfurter_Latest_Rates {
+  amount: Float
+  base: String
+  date: Date
+  rates: JSON
+}
+
+type Frankfurter_Historical_Rates {
+  base: String
+  amount: Float
+  date: Date
+  rates: JSON
+}
+
+type Frankfurter_TimeSeries_Rates {
+  base: String
+  amount: Float
+  start_date: Date
+  end_date: Date
+  rates: JSON
+}
+
+
+schema {
+	query: Query
+}
+
+type Query {
+  frankfurter_currency_list: JSON
+  frankfurter_convertedAmount(
+    amount: Float!
+    from: String!
+    to: String!
+  ): Float
+  ipApi_location(ip: String!, lang: String! = "en"): IpApi_Location
+  ipApi_stepzen_request: IpApi_StepZen_Request @connector(type: "request")
+  ipApi_location_Auto(lang: String! = "en"): IpApi_Location
+}
+`
+
+query_ast := graphql.parse_query(input.request.http.parsed_body.query)
 
 default allow := false
-query_ast := graphql.parse_query(input.request.http.parsed_body.query)
 
 allow {
 	frankfurterConvertedAmountQueries != {}
@@ -13,17 +54,24 @@ allow {
 	every query in frankfurterConvertedAmountQueries {
 		allowed_kong_query(query)
 	}
-    
-   every query in frankfurterCurrencyList{
-   	allowed_public_query(query)
-   }
+
+	every query in frankfurterCurrencyList {
+		allowed_public_query(query)
+	}
 }
 
 # Allow kong_id client_id to convert from EUR
 allowed_kong_query(q) {
 	is_kong_id
+
+	#constant value example
 	valueRaw := constant_string_arg(q, "from")
 	valueRaw == "EUR"
+
+	#look up var in variables example
+	amountVar := variable_arg(q, "amount")
+	amount := input.request.http.parsed_body.variables[amountVar]
+	amount > 2 
 }
 
 #Allow all generic users to query list of of currencies
@@ -79,98 +127,3 @@ is_kong_id {
 is_realm_access_default {
 	"default-roles-kong" in token.payload.realm_access.roles
 }
-
-####SCHEMA
-schema := `
-type Frankfurter_Latest_Rates {
-  amount: Float
-  base: String
-  date: Date
-  rates: JSON
-}
-
-type Frankfurter_Historical_Rates {
-  base: String
-  amount: Float
-  date: Date
-  rates: JSON
-}
-
-type Frankfurter_TimeSeries_Rates {
-  base: String
-  amount: Float
-  start_date: Date
-  end_date: Date
-  rates: JSON
-}
-
-type IpApi_Location {
-  status: String
-  message: String
-  continent: String
-  continentCode: String
-  country: String
-  countryCode: String
-  region: String
-  regionName: String
-  city: String
-  district: String
-  zip: String
-  lat: Float
-  lon: Float
-  timezone: String
-  offset: Int
-  currency: String
-  isp: String
-  org: String
-  as: String
-  reserve: String
-  mobile: Boolean
-  proxy: Boolean
-  hosting: Boolean
-  ip: String
-  priceInCountry(amount: Float!, from: String!): Float
-    @materializer(
-      query: "frankfurter_convertedAmount"
-      arguments: [
-        { name: "to", field: "currency" }
-        { name: "amount", argument: "amount" }
-        { name: "from", argument: "from" }
-      ]
-    )
-}
-
-type IpApi_StepZen_Request {
-  clientIp: String
-}
-
-type Query {
-  frankfurter_latest_rates(
-    from: String
-    to: String
-    amount: Float
-  ): Frankfurter_Latest_Rates
-  frankfurter_historical_rates(
-    from: String
-    to: String
-    amount: Float
-    date: Date
-  ): Frankfurter_Historical_Rates
-  frankfurter_time_series(
-    from: String
-    to: String
-    amount: Float
-    start_date: Date
-    end_date: Date
-  ): Frankfurter_TimeSeries_Rates
-  frankfurter_currency_list: JSON
-  frankfurter_convertedAmount(
-    amount: Float!
-    from: String!
-    to: String!
-  ): Float
-  ipApi_location(ip: String!, lang: String! = "en"): IpApi_Location
-  ipApi_stepzen_request: IpApi_StepZen_Request @connector(type: "request")
-  ipApi_location_Auto(lang: String! = "en"): IpApi_Location
-}
-`

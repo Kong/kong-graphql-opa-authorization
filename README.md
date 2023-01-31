@@ -50,10 +50,16 @@ Navigate back to the terminal to add the konnect gateway to the `kong-net` docke
 KONNECT_DP=$(docker ps --format '{{json .}}' |  jq -s 'map({name:.Names,Image:.Image})' | jq '.[] | select (.Image=="kong/kong-gateway:3.1.0.0")' | jq -r '.name')
 ```
 
-1. Add container to `kong-net`
+2. Add container to `kong-net`
 
 ```console
 docker network connect kong-net $KONNECT_DP
+```
+
+3. Need to restart the container to pick up the services
+
+```console
+docker restart $KONNECT_DP
 ```
 
 ## Tutorial Stepzen Graphql Authorization with Konnect
@@ -70,13 +76,13 @@ In the master drop down menu, select `Create Realm` and create the `kong` realm.
 
 #### Create Client - kong_id and customer_id
 
-This example will step through how to make the kong_id, please repeat the exact steps for customer_id as well.
+This example will step through how to make the `kong_id,` please repeat the exact steps for customer_id as well.
 
-In the left-panel the kong realm should be selected --> Navigate to clients --> select `create client` in the main panel --> fill in `Client ID` with `kong_id`
+1. In the left-panel the kong realm should be selected --> Navigate to clients --> select `create client` in the main panel --> fill in `Client ID` with `kong_id`
 
-Select Next --> Toggle on client authentication, and for Authentication Flow toggle `Standard Flow` and `Service account roles` --> Save
+2. Select Next --> Toggle on client authentication, and for Authentication Flow toggle `Standard Flow` and `Service account roles` --> Save
 
-Navigate to Credentials Tab and grab the client secret. Save the client secret for later.
+3. Navigate to Credentials Tab and grab the client secret. Save the client secret for later.
 
 * Repeat this process for `customer_id`.
 
@@ -94,28 +100,28 @@ Both the plugins will be disabled in order to validate the gateway service and r
 Execute the deck sync command below to push up the gateway configuration.
 
 ```console
-deck sync --state kong.yaml --konnect-email <email> --konnect-password <password>
+deck sync --state kong.yaml --konnect-token <your-pat> --konnect-runtime-group-name default
 ```
 
-Once the deck file has been synced in, please take a moment to navigate konnect and review the configuration.
+Once the deck file has been synced in, take a moment to navigate konnect and review the configuration.
 
 ### Insomnia
 
 Open Insomnia and import the `insomnia-kong-stepzen-authZ.json` Collection.
 
-From Insomnia we will test that we call graphql query via the Konnect gateway running on our local workstation. Execute the `MyQuery-Konnect` Request. 
+From Insomnia we will test that we call graphql query via the Konnect gateway running on our local workstation. Execute the `MyQuery-Konnect-kong_id` Request.
 
 ### Enabling OIDC Plugin
 
-Navigate to the `stepzen Route` --> Toggle on the OIDC plugin. When the OIDC plugin is enabled, the api call to the graphql endpoint will throw a `403 unauthorized`.
+Navigate to the `stepzen Route` --> Toggle on the OIDC plugin. When the OIDC plugin is enabled, the api call to the graphql endpoint will throw a `401 unauthorized`.
 
-Because we have implemented the `client_credentials` flow, we need to provide the client_id and client secret along with the graphql query. To fix that, in the insomnia interface, go to the Auth Tab on the request, and add your client_id (kong_id) and corresponding client secret as Basic Auth parameters.
+Because we have implemented the `client_credentials` flow, we need to provide the client_id and client secret along with the graphql query. To fix that, in the insomnia interface, go to the Auth Tab on the request, and add username --> kong_id and password -->  corresponding client secret for Basic Auth parameters.
 
 Execute the request again and you should get a 200 response.
 
 ### OPA Plugin
 
-With OIDC plugin correctly configured and validate, we can begin understanding how to rely on the OPA plugin for graphql authorization.
+With OIDC plugin correctly configured and validated, we can begin understanding how to rely on the OPA plugin for graphql authorization.
 
 #### Understanding the grpahql.rego OPA Policy
 
@@ -196,7 +202,7 @@ query MyQuery {
 }
 ```
 
-But the query below should return a 401 unauthorized:
+But the query below should return a 403 - Forbidden:
 
 ```console
 query MyQuery {
@@ -215,7 +221,7 @@ query MyQuery {
 }
 ```
 
-You should see that this query below returns a 401 - unauthorized.
+You should see that this query below returns a 403 - Forbidden:
 
 ```console
 query MyQuery {
