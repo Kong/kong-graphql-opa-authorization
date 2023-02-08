@@ -1,47 +1,18 @@
-package demopolicy.gql
+package graphql
 
 import future.keywords.every
 import future.keywords.in
 
+
 schema := `
-type Frankfurter_Latest_Rates {
-  amount: Float
-  base: String
-  date: Date
-  rates: JSON
-}
-
-type Frankfurter_Historical_Rates {
-  base: String
-  amount: Float
-  date: Date
-  rates: JSON
-}
-
-type Frankfurter_TimeSeries_Rates {
-  base: String
-  amount: Float
-  start_date: Date
-  end_date: Date
-  rates: JSON
-}
-
-
-schema {
-	query: Query
-}
-
-type Query {
-  frankfurter_currency_list: JSON
-  frankfurter_convertedAmount(
-    amount: Float!
-    from: String!
-    to: String!
-  ): Float
-  ipApi_location(ip: String!, lang: String! = "en"): IpApi_Location
-  ipApi_stepzen_request: IpApi_StepZen_Request @connector(type: "request")
-  ipApi_location_Auto(lang: String! = "en"): IpApi_Location
-}
+   type Query {
+     frankfurter_currency_list: JSON
+     frankfurter_convertedAmount(
+       from: String!
+       to: String!
+     ): Float
+   }
+   scalar JSON
 `
 
 query_ast := graphql.parse_query(input.request.http.parsed_body.query)
@@ -49,8 +20,9 @@ query_ast := graphql.parse_query(input.request.http.parsed_body.query)
 default allow := false
 
 allow {
+    
+    
 	frankfurterConvertedAmountQueries != {}
-	print(query_ast)
 	every query in frankfurterConvertedAmountQueries {
 		allowed_kong_query(query)
 	}
@@ -63,7 +35,8 @@ allow {
 # Allow kong_id client_id to convert from EUR
 allowed_kong_query(q) {
 	is_kong_id
-
+	
+    is_valid_query
 	#constant value example
 	valueRaw := constant_string_arg(q, "from")
 	valueRaw == "EUR"
@@ -77,6 +50,21 @@ allowed_kong_query(q) {
 #Allow all generic users to query list of of currencies
 allowed_public_query(q) {
 	is_realm_access_default
+}
+
+is_valid_query {
+	#schema validation 
+	schema_valid := graphql.schema_is_valid(schema)
+    print("schema validation", schema_valid)
+    
+#     #schema_parsed
+    schema_parsed := graphql.parse_schema(schema)
+    print(schema_parsed)
+    
+    result := graphql.parse_and_verify(input.request.http.parsed_body.query,schema)
+    print("valid query", result)
+    
+    schema_valid == true
 }
 
 # Helper functions.
