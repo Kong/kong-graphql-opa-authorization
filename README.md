@@ -111,7 +111,7 @@ Open Insomnia and import the `insomnia-kong-stepzen-authZ.json` Collection.
 
 From Insomnia we will test that we call graphql query via the Konnect gateway running on our local workstation. Execute the `MyQuery-Konnect-kong_id` Request.
 
-### Enabling OIDC Plugin
+### OIDC Plugin
 
 Navigate to the `stepzen Route` --> Toggle on the OIDC plugin. When the OIDC plugin is enabled, the api call to the graphql endpoint will throw a `401 unauthorized`.
 
