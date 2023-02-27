@@ -25,6 +25,3 @@ networks:
   kong-net:
     external: false
     name: kong-net
-
-
-    

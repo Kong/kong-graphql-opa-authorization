@@ -15,10 +15,10 @@ services:
   - https_redirect_status_code: 426
     methods:
     - POST
-    name: stepzen
+    name: graphql
     path_handling: v0
     paths:
-    - /stepzen
+    - /graphql
     plugins:
     - config:
         include_body_in_opa_input: true
