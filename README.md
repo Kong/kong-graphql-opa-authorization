@@ -8,13 +8,12 @@ The objective of the architecture is to understand how to implement authenticati
 
 The solution should solve for the Authentication and Authorization concerns at the gateway layer. First, users should be authenticated, and if authenticated, then the user’s fine-grain permissions should be evaluated to determine if user has permission to run the incoming graphql request (whether the request is nested, or using query variables).
 
-
 ## Prerequisites
 
 The prequisites for the tutorial:
 
 1. Konnect Enterprise Account - for use of OIDC and OPA Plugin
-	i. Konnect Personal Access Token(https://docs.konghq.com/konnect/runtime-manager/runtime-groups/declarative-config/#generate-a-personal-access-token)
+  * Konnect Personal Access Token(https://docs.konghq.com/konnect/runtime-manager/runtime-groups/declarative-config/#generate-a-personal-access-token)
 2. Docker and docker compose
 3. Insomnia Desktop Application
 
@@ -91,7 +90,7 @@ Here we will will step through how to make the `kong_id` client. This process ne
 
 3. Navigate to Credentials Tab and copy the client secret. Save the client secret for later.
 
-* Repeat this process to create the `customer_id` client.
+4. Repeat this process to create the `customer_id` client.
 
 ### OPA
 
@@ -211,19 +210,19 @@ The core logic for the policy defines the following:
 Read through the entire graphql.rego file for the full list of helper functions to support the OPA rules, but the core logic is defined below.
 
 ```bash
-	# Allow kong_id client_id to convert from EUR
-	allowed_kong_query(q) {
-		is_kong_id
-		
-		#constant value example
-		valueRaw := constant_string_arg(q, "from")
-		valueRaw == "EUR"
+# Allow kong_id client_id to convert from EUR
+allowed_kong_query(q) {
+	is_kong_id
+	
+	#constant value example
+	valueRaw := constant_string_arg(q, "from")
+	valueRaw == "EUR"
 
-		#look up var in variables example
-		amountVar := variable_arg(q, "amount")
-		amount := input.request.http.parsed_body.variables[amountVar]
-		amount > 5 
-	}
+	#look up var in variables example
+	amountVar := variable_arg(q, "amount")
+	amount := input.request.http.parsed_body.variables[amountVar]
+	amount > 5 
+}
 ```
 
 #### Enable OPA Plugin on the Route
