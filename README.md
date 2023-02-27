@@ -131,7 +131,7 @@ Once the deck file has been synced in, take a moment to navigate konnect and rev
 
 From Insomnia we will test that we call graphql query via the Konnect gateway running on our local workstation.
 
-Open Insomnia and import the `insomnia-kong-stepzen-authZ.json` Collection.
+Open Insomnia and import the `insomnia.yaml` Project, and open the `Quickstart Collection`.
 
 Execute the `MyQuery-Konnect-kong_id` Request, and you should see a 200 status code with a response
 
