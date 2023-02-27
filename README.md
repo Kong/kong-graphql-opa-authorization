@@ -1,4 +1,4 @@
-# GraphQL Authorization Pattern with Konnect, OPA and OIDC 
+# GraphQL Authorization Pattern with Konnect, OPA and OIDC
 
 <p align="center">
   <img src="https://konghq.com/wp-content/uploads/2018/08/kong-combination-mark-color-256px.png" /></div>
@@ -8,14 +8,18 @@ The objective of the architecture is to understand how to implement authenticati
 
 The solution should solve for the Authentication and Authorization concerns at the gateway layer. First, users should be authenticated, and if authenticated, then the user’s fine-grain permissions should be evaluated to determine if user has permission to run the incoming graphql request (whether the request is nested, or using query variables).
 
+<p align="center">
+    <img src="img/arch/reference_arch.png"/></div>
+</p>
+
 ## Prerequisites
 
 The prequisites for the tutorial:
 
 1. Konnect Enterprise Account - for use of OIDC and OPA Plugin
-  * Konnect Personal Access Token(https://docs.konghq.com/konnect/runtime-manager/runtime-groups/declarative-config/#generate-a-personal-access-token)
-2. Docker and docker compose
-3. Insomnia Desktop Application
+2. [Konnect Personal Access Token](https://docs.konghq.com/konnect/runtime-manager/runtime-groups/declarative-config/#generate-a-personal-access-token)
+3. Docker and docker compose
+4. Insomnia Desktop Application
 
 ## Environment Setup
 
