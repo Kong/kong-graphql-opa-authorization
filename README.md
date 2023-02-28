@@ -12,6 +12,30 @@ The solution should solve for the Authentication and Authorization concerns at t
     <img src="img/arch/reference_arch.png"/></div>
 </p>
 
+## Table of Contents
+
+<!-- @import "[TOC]" {cmd="toc" depthFrom=2 depthTo=6 orderedList=true} -->
+
+<!-- code_chunk_output -->
+
+* [Prerequisites](#prerequisites)
+* [Environment Setup](#environment-setup)
+  * [Keycloak and OPA Docker](#keycloak-and-opa---docker-containers)
+  * [Konnect Runtime Instance Docker](#konnect-dp---docker-container)
+  * [Keyclok Configuration](#keycloak-configuration)
+  * [OPA Configuration](#opa-engine-configuration)
+  * [Konnect Configuration](#konnect-configuration)
+  * [Insomnia Configuration](#insomnia-configuration)
+* [Tutorial](#tutorial)
+  * [Step 1 - OIDC Plugin](#step-1---oidc-plugin)
+  * [Step 2 - OPA Plugin](#step-2---opa-plugin)
+  * [Step 3 - Testing OPA Behavior - kong_id](#step-3---testing-opa-behavior)
+  * [Step 4 - Testing OPA Behavior - customer_id](#step-4---testing-opa-behavior)
+* [Clean up](#cleaup)
+* [Summary](#summary)
+
+<!-- /code_chunk_output -->
+
 ## Prerequisites
 
 The prequisites for the tutorial:
@@ -29,7 +53,7 @@ First, clone this repository:
 https://github.com/Kong/kong-stepzen-opa-authorization.git
 ```
 
-### Keycloak and Opa - Docker Containers
+### Keycloak and OPA - Docker Containers
 
 Docker compose file will create three components: kong-net docker network, opa container, and keycloak container.
 
@@ -62,9 +86,7 @@ kong/kong-gateway:3.1.1.3
 
 You should see the gateway successfully connected under `Runtime Instances` menu.
 
-## Tutorial
-
-### Keycloack create clients
+### Keycloak Configuration
 
 You will create two clients in Keycloak, `kong_id` and `customer_id` that will be setup with `client_credentials` OAuth flow.
 
@@ -74,7 +96,7 @@ Login to keycloak:
 * username - `admin`
 * password - `admin`
 
-#### Create Realm - kong
+#### Create Realm
 
 In the drop down menu on the left nav bar where it says `master`:
 
@@ -84,7 +106,7 @@ In the drop down menu on the left nav bar where it says `master`:
   * fill in Realm name  `kong`
   * select `Create` Button
 
-#### Create Client - kong_id and customer_id
+#### Create Clients
 
 Here we will will step through how to make the `kong_id` client. This process needs to be repeated to create the `customer_id` client as well.
 
@@ -96,7 +118,7 @@ Here we will will step through how to make the `kong_id` client. This process ne
 
 4. Repeat this process to create the `customer_id` client.
 
-### OPA
+### OPA Engine Configuration
 
 The graphql policy needs to be published to the OPA engine.
 
@@ -106,7 +128,7 @@ Execute the http request below to put the policy on the local opa server.
 curl -XPUT http://localhost:8181/v1/policies/graphql --data-binary @opa/graphql.rego
 ```
 
-### Deck Sync - Gateway Service, Route, and Route Plugins
+### Konnect Configuration
 
 The last setup task we will do is use to `decK` to help expedite the setup of gateway. The `kong.yaml` file has the configuration that we are going to sync up to Konnect.
 
@@ -127,7 +149,7 @@ deck sync --state kong.yaml --konnect-token <your-pat> --konnect-runtime-group-n
 
 Once the deck file has been synced in, take a moment to navigate konnect and review the configuration.
 
-### Insomnia
+### Insomnia Configuration
 
 From Insomnia we will test that we call graphql query via the Konnect gateway running on our local workstation.
 
@@ -176,7 +198,9 @@ Execute the `MyQuery-Konnect-kong_id` Request, and you should see a 200 status c
 }
 ```
 
-### OIDC Plugin
+## Tutorial
+
+### Step 1 - OIDC Plugin
 
 Now, we've validated the gateway setup is working. So the first activity will be to enable the OIDC, and validate the behavior.
 
@@ -198,7 +222,7 @@ Because we have implemented the `client_credentials` flow, we need to provide th
 
 4. Open the `MyQuery-Konnect-customer_id` Request and repeate the same process but with the `customer_id` username and secret. You should see a 200 response.
 
-### OPA Plugin
+### Step 2 - OPA Plugin
 
 With OIDC plugin correctly configured and validated, we can begin understanding how to rely on the OPA plugin for graphql authorization.
 
@@ -235,7 +259,7 @@ Navigate back to the route in Konnect and enable the OPA plugin.
 
 Now that the OPA Plugin has been configured we can play with the graphql query request to validate the behavior.
 
-**I - Testing the kong_id client id requests**
+### Step 3 - Testing OPA Behavior
 
 We are still using the `MyQuery-Konnect-kong_id` Request in Insomnia.
 
@@ -257,11 +281,9 @@ We are still using the `MyQuery-Konnect-kong_id` Request in Insomnia.
 
 Nice - so we've tested through several type of possible access controls, using constants, and query variables, also parsing out a claim from the JWT.
 
-**II - customer_id requests**
+### Step 4 - Testing OPA Behavior
 
-Let's do some similar testing with the `customer_id` client.
-
-For this, in Insomnia open the `MyQuery-Konnect-customer_id` Request. If you haven't already, add your basic auth header to the request.]
+In Insomnia open the `MyQuery-Konnect-customer_id` Request. If you haven't already, add your basic auth header to the request.]
 
 Customers are only allowd to query for the currency list.
 
