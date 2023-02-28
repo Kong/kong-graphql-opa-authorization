@@ -300,10 +300,10 @@ Nice - so we've tested through several type of possible access controls, using c
 1. Tear down the konnect docker container:
 
 ```console
-docker kill gracious_chatelet
+docker kill <container-name>
 ```
 
-Tear down the docker containers:
+Tear down the Keycloak and OPA docker containers:
 
 ```console
 docker compose down
