@@ -1,6 +1,6 @@
 package graphql
 
-mport future.keywords.every
+import future.keywords.every
 import future.keywords.in
 
 
@@ -16,13 +16,11 @@ schema := `
    scalar JSON
 `
 
-query_ast := graphql.parse_query(input.request.http.parsed_body.query)
+query_ast := graphql.parse_and_verify(input.request.http.parsed_body.query, schema)[1]
 
 default allow := false
 
 allow {
-    
-    is_valid_query
     
 	frankfurterConvertedAmountQueries != {}
 	every query in frankfurterConvertedAmountQueries {
@@ -51,13 +49,6 @@ allowed_kong_query(q) {
 #Allow all generic users to query list of of currencies
 allowed_public_query(q) {
 	is_realm_access_default
-}
-
-is_valid_query {
-    
-    valid := graphql.is_valid(input.request.http.parsed_body.query,schema)    
-    valid == true
-    print("valid result", valid)
 }
 
 # Helper functions.
