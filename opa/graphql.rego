@@ -1,6 +1,6 @@
 package graphql
 
-import future.keywords.every
+mport future.keywords.every
 import future.keywords.in
 
 
@@ -8,6 +8,7 @@ schema := `
    type Query {
      frankfurter_currency_list: JSON
      frankfurter_convertedAmount(
+       amount: Float!
        from: String!
        to: String!
      ): Float
@@ -21,6 +22,7 @@ default allow := false
 
 allow {
     
+    is_valid_query
     
 	frankfurterConvertedAmountQueries != {}
 	every query in frankfurterConvertedAmountQueries {
@@ -36,7 +38,6 @@ allow {
 allowed_kong_query(q) {
 	is_kong_id
 	
-    is_valid_query
 	#constant value example
 	valueRaw := constant_string_arg(q, "from")
 	valueRaw == "EUR"
@@ -53,18 +54,10 @@ allowed_public_query(q) {
 }
 
 is_valid_query {
-	#schema validation 
-	schema_valid := graphql.schema_is_valid(schema)
-    print("schema validation", schema_valid)
     
-#     #schema_parsed
-    schema_parsed := graphql.parse_schema(schema)
-    print(schema_parsed)
-    
-    result := graphql.parse_and_verify(input.request.http.parsed_body.query,schema)
-    print("valid query", result)
-    
-    schema_valid == true
+    valid := graphql.is_valid(input.request.http.parsed_body.query,schema)    
+    valid == true
+    print("valid result", valid)
 }
 
 # Helper functions.
