@@ -4,7 +4,7 @@
   <img src="https://konghq.com/wp-content/uploads/2018/08/kong-combination-mark-color-256px.png" /></div>
 </p>
 
-The objective of the architecture is to understand how to implement authentication and authorization for GraphQL APIs using OIDC and OPA best practices.
+The objective of this tutorial is to understand how to implement authentication and authorization for GraphQL APIs using OIDC and OPA with Konnect.
 
 The solution should solve for the Authentication and Authorization concerns at the gateway layer. First, users should be authenticated, and if authenticated, then the user’s fine-grain permissions should be evaluated to determine if user has permission to run the incoming graphql request (whether the request is nested, or using query variables).
 
@@ -35,6 +35,23 @@ The solution should solve for the Authentication and Authorization concerns at t
 * [Summary](#summary)
 
 <!-- /code_chunk_output -->
+
+## Tutorial Overview
+
+We’re protecting the demo Frankfurter GraphQL API, an exchange rate API by StepZen.
+
+In our scenario, we have 2 types of users, kong users and customers users set up in Keycloak.
+
+* The kong users should have special privileges. These are the only users allowed to hit the frankfurter_convertedAmount query.
+  * Plus additional restrictions to demonstrate constant and query variable validation.
+* Anyone with a valid JWT (kong and customers) should be able to see the frankfurter_currency_list.
+
+The matrix of permissions is diagrammed below.
+
+
+<p align="center">
+    <img src="img/tutorial/overview.png" width=1000/></div>
+</p>
 
 ## Prerequisites
 
@@ -228,20 +245,30 @@ With OIDC plugin correctly configured and validated, we can begin understanding 
 
 #### Understanding the graphql.rego OPA Policy
 
-OPA language has GraphQL built-in functions that support parsing queries/mutations, verifying against a schema, and traversing the abstract syntax tree. We used the functions to build a graphql authorization strategy relying on the JWT validated by the OIDC plugin.
+OPA language has GraphQL built-in functions that support parsing queries/mutations, verifying against a schema, and traversing the abstract syntax tree. We used the functions to build a graphql authorization strategy relying on parsing claims out of the JWT provided by the OIDC integration.
 
-The core logic for the policy defines the following:
+The core logic shows how to:
 
-1. only client_id `kong_id` is permitted to query the `frankfurter_convertedAmount` with `EUR` in the `from` field, and they are restricted on the amount they can call. It has to be greater than 5.
-2. all client_id `kong_id` and `customer_id` in this case, are permitted to query `frankfurter_currency_list`.
+1. Parse query to AST and validate against the schema
+
+2. Restricts the access controls based on claims. In this case kong_id users have more access than the customer_id users.
+
+3. Parse input constants and validate those values
+
+4. Parse input query variables and validate those values
 
 Read through the entire graphql.rego file for the full list of helper functions to support the OPA rules, but the core logic is defined below.
 
 ```bash
+#Parse Query to Abstract Syntax Tree and Validate against Schema
+query_ast := graphql.parse_and_verify(input.request.http.parsed_body.query, schema)[1]
+
+...extra logic...read the whole file....
+
 # Allow kong_id client_id to convert from EUR
 allowed_kong_query(q) {
 	is_kong_id
-	
+
 	#constant value example
 	valueRaw := constant_string_arg(q, "from")
 	valueRaw == "EUR"
@@ -249,47 +276,75 @@ allowed_kong_query(q) {
 	#look up var in variables example
 	amountVar := variable_arg(q, "amount")
 	amount := input.request.http.parsed_body.variables[amountVar]
-	amount > 5 
+	amount > 5
 }
 ```
 
-#### Enable OPA Plugin on the Route
+#### Enable OPA Plugin
 
 Navigate back to the route in Konnect and enable the OPA plugin.
 
 Now that the OPA Plugin has been configured we can play with the graphql query request to validate the behavior.
 
-### Step 3 - Testing OPA Behavior
+### Step 3 - Testing kong user Authorization
 
-We are still using the `MyQuery-Konnect-kong_id` Request in Insomnia.
+Open the `MyQuery-Konnect-kong_id` Request in Insomnia.
 
-1. With the `amount` in the query variable set to `10.00`, the query will continue to succeed.
+**Test 1 - kong user query that are allowed**
 
-2. Change the `amount` query variable to `4.9`, and we should now start to `403 Forbidden` Status and a json response:
+* Set the `amount` in the query variables to `10.00`
+* Set `from` in the query to `EUR`
 
-```json
-{
-	"message": "unauthorized"
-}
-```
+Outcome: You should see a 200 response with data
 
-3. Change amount back to `10.00` and update the `EUR` constant defined in the query to `MYR`, we should also see this fail with the same `403` status code. Example below:
+<p align="center">
+    <img src="img/tutorial/test-1-kong_id_successful.png" width=1000/></div>
+</p>
 
-```console
-	frankfurter_convertedAmount(amount: $amount, from: "MYR", to: "CHF")
-```
+**Test 2 - kong user queries that are NOT allowed**
+
+* Set  the `amount` in the query variables to `4.9`
+
+Outcome: You should see a `403 Forbidden` Status and a json response:
+
+<p align="center">
+    <img src="img/tutorial/test-2-kong_id_unsuccesful.png" width=1000/></div>
+</p>
+
+* Change amount in the query variables back to `10.00`
+* Set `from` in the query to `MYR`
+
+Outcome: You should see a `403 Forbidden` Status
+
+<p align="center">
+    <img src="img/tutorial/test-2-kong_id_unsuccesful_b.png" width=1000/></div>
+</p>
 
 Nice - so we've tested through several type of possible access controls, using constants, and query variables, also parsing out a claim from the JWT.
 
-### Step 4 - Testing OPA Behavior
+### Step 4 - Testing customer user Authorization
 
-In Insomnia open the `MyQuery-Konnect-customer_id` Request. If you haven't already, add your basic auth header to the request.]
+Open the `MyQuery-Konnect-customer_id` Request in Insomnia.
 
-Customers are only allowd to query for the currency list.
+**Test 3 - customer user queries that are allowed**
 
-1. So execute the query in insomnia with no changes, and it should succeed.
+* Execute the query in insomnia with no changes,
 
-2. Now lets copy the `frankfurter_convertedAmount(amount: $amount, from: "EUR", to: "CHF")` into the query, and you should again see a `403 Forbidden` status code.
+Outcome: You should see a `200` Status
+
+<p align="center">
+    <img src="img/tutorial/test-3-customer_id_successful.png" width=1000/></div>
+</p>
+
+**Test 4 - customer user queries that are NOT allowed**
+
+* Copy the `frankfurter_convertedAmount(amount: $amount, from: "EUR", to: "CHF")` into the query and update query inputs (look at the screenshot below)
+
+Outcome: You should again see a `403 Forbidden` status code.
+
+<p align="center">
+    <img src="img/tutorial/test-4-customer_id_unsuccessful.png" width=1000/></div>
+</p>
 
 ### Conclusion
 

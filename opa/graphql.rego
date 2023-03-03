@@ -16,6 +16,7 @@ schema := `
    scalar JSON
 `
 
+#Parse Query to Abstract Syntax Tree and Validate against Schema
 query_ast := graphql.parse_and_verify(input.request.http.parsed_body.query, schema)[1]
 
 default allow := false
