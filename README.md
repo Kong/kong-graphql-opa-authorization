@@ -57,7 +57,7 @@ The matrix of permissions is diagrammed below.
 
 The prequisites for the tutorial:
 
-1. Konnect Enterprise Account - for use of OIDC and OPA Plugin
+1. [Konnect Plus Account](https://konghq.com/products/kong-konnect/register) - for use of OIDC and OPA Plugin
 2. [Konnect Personal Access Token](https://docs.konghq.com/konnect/runtime-manager/runtime-groups/declarative-config/#generate-a-personal-access-token)
 3. Docker and docker compose
 4. Insomnia Desktop Application
