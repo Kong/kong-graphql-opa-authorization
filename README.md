@@ -50,7 +50,7 @@ The matrix of permissions is diagrammed below.
 
 
 <p align="center">
-    <img src="img/tutorial/overview.png" width=1000/></div>
+    <img src="img/arch/overview.png" width=1000/></div>
 </p>
 
 ## Prerequisites
