@@ -67,7 +67,7 @@ The prequisites for the tutorial:
 First, clone this repository:
 
 ```console
-https://github.com/Kong/kong-stepzen-opa-authorization.git
+https://github.com/Kong/kong-graphql-opa-authorization.git
 ```
 
 ### Keycloak and OPA - Docker Containers
